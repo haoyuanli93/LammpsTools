@@ -88,6 +88,9 @@ def get_hygen_positions_random_orientation(oxygen_positions, random_number_seed)
     h_holder[:, 1, 0] = np.cos(angles)
     h_holder[:, 1, 1] = np.sin(angles)
 
+    # Add the bond length
+    h_holder *= ho_bond_length
+
     ##############################################################################
     #    Rotate the Hydrogen bonds
     ##############################################################################
