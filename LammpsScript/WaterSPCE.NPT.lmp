@@ -1,0 +1,61 @@
+# The SPC/E model of water
+units          real
+atom_style     full
+timestep       0.25
+boundary       p p p
+
+# Read the initial configuration
+read_data      waterInitial.data
+
+# Define some variables
+variable        dt equal dt
+variable        ext_temp equal 600.0
+variable        ext_pres equal 225.0
+variable        Pdamp equal 100.0*${dt}
+variable        Tdamp equal 100.0*${dt} # units are time units, LAMMPS suggestion is 100 time steps
+
+# Define groups to sort later
+group           O type 1
+group           H type 2
+
+# Define force field
+pair_style      lj/cut/tip4p/long 1 2 1 1 0.15 12.0
+pair_coeff      1 1  0.1553 3.166
+pair_coeff      1 2  0.0000000000 0.0000
+pair_coeff      2 2  0.0000000000 0.0000
+
+bond_style      harmonic
+bond_coeff      1 1000 0.9572
+angle_style     harmonic
+angle_coeff     1 3000 104.52
+
+kspace_style    pppm/tip4p    1.0e-5
+
+dihedral_style  none        # TraPPE CO2 has no dihedrals (quadruplets)
+improper_style  none        # TraPPE CO2 has no improper quadruplets
+
+# Neighbor List Parameters
+neighbor        2.5 bin     # Skin (default = 2.0 bin for real units)
+neigh_modify    delay 0 every 10 check no
+
+# Create initial velocity
+velocity all create ${ext_temp} 432567 rot yes dist gaussian
+
+# Reset the time step counter
+reset_timestep  0   # Reset the time step counter to 0
+
+# Define the simulation ensemble
+fix             1 all rigid/npt molecule temp ${ext_temp} ${ext_temp} ${Tdamp} iso ${ext_pres} ${ext_pres} ${Pdamp} tparam 3 1 3 pchain 3
+# Define thermodynamic output
+thermo          100
+thermo_style    custom step temp pe etotal press density
+
+# Output a restart file every N steps
+restart         200 output/savePoint.restart.*
+
+# Define output
+dump            atomPos all custom 100 output/atom.position.* id type x y z
+dump_modify     atomPos element O H sort id
+
+#Run the simulation for N steps
+run             600
