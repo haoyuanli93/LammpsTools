@@ -1,0 +1,81 @@
+# The SPC/E model of water
+units          real
+atom_style     full
+timestep       0.25
+boundary       p p p
+
+# Read the initial configuration
+read_data      waterInitial.data
+
+# Define some variables
+variable        dt equal dt
+variable        ext_temp equal 600.0
+variable        Tdamp equal 100.0*${dt}           # units are time units, LAMMPS suggestion is 100 time steps
+
+# Define groups to sort later
+group           O type 1
+group           H type 2
+
+# Define force field
+pair_style	    lj/cut/coul/long 9.0 9.0             #LJ with 10.0 cutoff, Coulomb with 10.0 cutoff
+pair_modify     tail yes			                 #Analytic Long-range Tail corrections, for the LJ interactions
+kspace_style	pppm 1.0e-4                          #PPPM Ewald, relative error in forces
+                                                     #kspace uses tinfoil/conducting boundary conditions by default
+                                                     #Let LAMMPS set the Ewald parameters automatically
+
+pair_coeff      1 1 0.15539421659476232 3.16555789   #Oxygen-Oxygen LJ(dispersion) parameters
+pair_coeff	    * 2 0.0000 0.0000		             #Hydrogen-Hydrogen LJ(disperson) parameters (none for SPC/E)
+
+
+bond_style	harmonic   		                	     #Sets the bond type as harmonic
+angle_style	harmonic			                     #Sets the triplet bond type as harmonic
+dihedral_style	none				                 #SPC/e has no dihedrals (quadruplets)
+improper_style	none				                 #SPC/e has no improper quadruplets
+
+bond_coeff	1 5000.00 1.000                          #Oxygen-Hydrogen bond parameters (1~ang)
+angle_coeff	1 500.0 109.47			                 #Hydrogen-Oxygen-Hydrogen angle parameters (angle=109.47deg)
+		  				                             #NOTE: harmonic moduli do not matter, since the rigid bonds are preserved by SHAKE
+						                             #NOTE: the moduli do affect the relaxation step, though.
+
+
+# Neighbor List Parameters
+# neighbor        2.5 bin     # Skin (default = 2.0 bin for real units)
+# neigh_modify    delay 0 every 10 check no
+
+#Create initial velocity distribution
+velocity	all create ${ext_temp} 432567 dist uniform
+		      	    	      	      	     #Set uniform distribution with T = {ext_temp}
+		      	    	      	      	     #Seed integer = 432567
+						                     #dist uniform is the LAMMPS Default
+						                     #NOTE: Initial (kinetic) temperature will differ from thermostat, due to use of SHAKE,
+						                     # but will equilibrate quickly.
+
+#Reset the time step counter
+reset_timestep  0                                    #Reset the time step counter to 0
+
+#SHAKE Parameters to preserve bondlengths
+fix		1 all shake 0.0001 20 0 b 1 a 1      #0.0001 = accuracy tolerance of SHAKE
+		      	    	      	      	     #20 = max number of iterations in each SHAKE solution
+		      	    	      	      	     #0 = print SHAKE statistics every "this many" timesteps (0 = never)
+		      	    	      	      	     #b 1 = 1 bond type
+		      	    	      	      	     #a 1 = 1 angle type
+
+#Ensemble set-up: NVT ensemble, thermostatted by Nose-Hoover a chained thermostat, set at temperature $ext_temp
+fix		2 all nvt temp ${ext_temp} ${ext_temp} ${Tdamp}
+                                             #start temperature = ext_temp
+		      	       		   	             #end temperature = ext_temp
+		      	    	      	      	     #Tdamp (in time units, fs)
+
+# Define thermodynamic output
+thermo          100
+thermo_style    custom step temp pe etotal press density
+
+# Output a restart file every N steps
+restart         1000 output/savePoint.restart.*
+
+# Define output
+dump            atomPos all custom 1000 output/atom.position.* id type x y z
+dump_modify     atomPos element O H sort id
+
+#Run the simulation for N steps
+run             5000

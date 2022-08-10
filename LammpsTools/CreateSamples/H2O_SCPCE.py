@@ -3,18 +3,18 @@ from scipy.spatial.transform import Rotation
 
 N_A = 6.02214076e23  # avogadro constant
 
-h_mass = 1.00784  # atomic mass for Hydrogen
+h_mass = 1.008  # atomic mass for Hydrogen
 o_mass = 15.9994  # atomic mass for oxygen
 
-h_charge = 0.5564  # hydrogen charge
-o_charge = -1.1128  # oxygen charge
+h_charge = 0.4238  # hydrogen charge
+o_charge = -0.8476  # oxygen charge
 
 h2o_mass = 2 * h_mass + o_mass  # molecule mass of H2O
 
-hoh_angle = np.deg2rad(104.52)  # The hoh angle of water
-hoh_angle_eps = np.deg2rad(1e-5)  # uncertainty of the bond angle
+hoh_angle = np.deg2rad(109.47)  # The hoh angle of water
+hoh_angle_eps = np.deg2rad(0.)  # uncertainty of the bond angle
 
-ho_bond_length = 0.9572  # The H-O bond length in A
+ho_bond_length = 1.0  # The H-O bond length in A
 
 dist_min = 2.7  # minimal distance between two oxygen atoms
 
@@ -88,7 +88,7 @@ def get_hygen_positions_random_orientation(oxygen_positions, random_number_seed)
     h_holder[:, 1, 0] = np.cos(angles)
     h_holder[:, 1, 1] = np.sin(angles)
 
-    # Add the bond length
+    # Change the bond length
     h_holder *= ho_bond_length
 
     ##############################################################################
