@@ -1,0 +1,64 @@
+#########################################################
+# Haoyuan Create this file for the TIP4P/2005 for regular water simulation
+#########################################################
+
+TIP4P2005 {
+
+  write("Data Atoms") {
+    $atom:o  $mol:w @atom:O  -1.1128   0.0000000   0.00000 0.000000
+    $atom:h1 $mol:w @atom:H   0.5564   0.7569503272636612 0.00000 0.585882276618295
+    $atom:h2 $mol:w @atom:H   0.5564  -0.7569503272636612 0.00000 0.585882276618295
+  }
+
+  write_once("Data Masses") {
+    @atom:O  16.0000
+    @atom:H  1.008000
+  }
+
+  write("Data Bonds") {
+    $bond:oh1 @bond:OH $atom:o $atom:h1
+    $bond:oh2 @bond:OH $atom:o $atom:h2
+  }
+
+  write("Data Angles") {
+    $angle:hoh @angle:HOH $atom:h1 $atom:o $atom:h2
+  }
+
+  write_once("In Settings") {
+
+
+    #########################################################################
+    ####   for the O-O interactions
+    #########################################################################
+    pair_coeff  @atom:O  @atom:O   0.1852050669216061 3.15890
+
+    #########################################################################
+    ####  for the O-H and H-H interactions
+    #########################################################################
+    pair_coeff  @atom:H  @atom:H   0.00 0.00
+    pair_coeff  @atom:O  @atom:H   0.00 1.5795
+    
+    #######################################
+    ####     Bond and angle 
+    #######################################
+    bond_coeff   @bond:OH         1000   0.9572
+    angle_coeff  @angle:HOH       3000   104.52
+  }
+
+  write_once("In Constraints") {
+    group tip4p type  @atom:O  @atom:H
+    fix fRattleTIP3P tip4p rattle 0.0001 10 100 b @bond:OH a @angle:HOH
+  }
+  
+  
+  write_once("In Init") {
+    # -- Default styles (for solo "TIP4P_2005" water) --
+    units        real
+    atom_style   full
+    pair_style   lj/cut/tip4p/long 1 2 1 1 0.1546485 8.5
+    bond_style   harmonic
+    angle_style  harmonic
+    kspace_style pppm/tip4p 1.0e-5 
+  }
+
+}

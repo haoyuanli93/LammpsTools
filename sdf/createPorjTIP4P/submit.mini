@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+#SBATCH --job-name=MDtest1 # Job name for allocation
+#SBATCH --output=logFiles/%j.log # File to which STDOUT will be written, %j inserts jobid
+#SBATCH --error=logFiles/%j.error # File to which STDERR will be written, %j inserts jobid
+#SBATCH --partition=psanaq # Partition/Queue to submit job
+#SBATCH --ntasks=64 # Total number of tasks
+
+mpirun -np 64 /reg/neh/home/haoyuan/.conda/envs/md/bin/lmp_mpi -in miniRun.lmp -log logFiles/mylog_$SLURM_JOB_ID.lammps
+
