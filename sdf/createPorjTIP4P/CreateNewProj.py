@@ -164,14 +164,14 @@ def initializeLammpsScriptNVT(fileName, temperature, randomSeed):
         lammpsScript.write("group spce type  1  2 \n")
         lammpsScript.write("\n")
         lammpsScript.write("#Define the npt ensemble of the run\n")
-        lammpsScript.write("fix therm all ave/time 1 10 10 v_P v_T v_rho file myThermo.txt \n")
+        lammpsScript.write("fix therm all ave/time 1 10 10 v_P v_T v_rho file myThermo.* \n")
         lammpsScript.write("fix fxnvt all nvt temp {} {} 10.0\n".format(temperature, temperature))
         lammpsScript.write("fix fRattleSPCE spce rattle 0.0001 10 100 b 1 a 1 \n")
         # Specify the output thermo info
         lammpsScript.write("neigh_modify \n")
         lammpsScript.write("\n")
         lammpsScript.write("# Define the restart info\n")
-        lammpsScript.write("restart 20000 restart.* \n")
+        lammpsScript.write("restart 20000 myRestart.* \n")
         lammpsScript.write("run   20000 \n")
 
 
@@ -209,7 +209,7 @@ def restartLammpsScriptNVT(fileName, temperature, getRDF=False, saveAtomPosition
         if getRDF:
             lammpsScript.write("#Get rdf\n")
             lammpsScript.write("compute myRDF tip4p rdf 50 1 1 \n")
-            lammpsScript.write("fix getRDF all ave/time 5 20 100 c_myRDF[*] file myRDF.* mode vector \n")
+            lammpsScript.write("fix getRDF all ave/time 5 20 100 c_myRDF[*] file ./output/myRDF.* mode vector \n")
             lammpsScript.write("\n")
 
         # Define the calculation procedure
@@ -223,8 +223,7 @@ def restartLammpsScriptNVT(fileName, temperature, getRDF=False, saveAtomPosition
         # Get the output data
         if saveAtomPosition:
             lammpsScript.write("#Save atom positions\n")
-            lammpsScript.write("compute myRDF tip4p rdf 50 1 1 \n")
-            lammpsScript.write("fix getRDF all ave/time 5 20 100 c_myRDF[*] file myRDF.* mode vector \n")
+            lammpsScript.write("dump 1 tip4p custom 100 ./output/atomPos.* id type x y z\n")
             lammpsScript.write("\n")
 
         # Specify run number and restart file
@@ -252,14 +251,14 @@ def createNewProj(projID, temperature=293.15, densityGCm3=0.789, molNum=1024, ra
     createSystemInfo(fileName="./proj{}/system.lt".format(projID),
                      densityGCm3=densityGCm3,
                      boxSizeA=getBoxSizeA(densityGCm3=densityGCm3, molarMass=molarMass, molNum=int(molNum)),
-                     molFile="spce.lt".format(projID),
-                     molName="SPCE",
+                     molFile="tip4p2005.lt".format(projID),
+                     molName="TIP4P2005",
                      molarMass=molarMass,
                      randomSeed=randomSeed)
 
     # Convert the moltemplate file into lammps file
     os.chdir("./proj{}/".format(projID))
-    os.system("~/Software/moltemplate/moltemplate/scripts/moltemplate.sh system.lt")
+    os.system("/sdf/group/beamphysics/haoyuan/software/moltemplate/moltemplate/scripts/moltemplate.sh system.lt")
     os.mkdir("./logFiles")
     os.mkdir("./output")
     os.chdir("../")
@@ -269,5 +268,13 @@ def createNewProj(projID, temperature=293.15, densityGCm3=0.789, molNum=1024, ra
         initializeLammpsScriptNVT(fileName="./proj{}/miniRun.lmp".format(projID),
                                   temperature=temperature,
                                   randomSeed=randomSeed)
+
+        restartLammpsScriptNVT(fileName="./proj{}/reRun.lmp".format(projID),
+                               temperature=temperature,
+                               getRDF=True,
+                               saveAtomPosition=True,
+                               runNum=20000,
+                               )
+
     else:
         print("The ensemble is not available yet.")
