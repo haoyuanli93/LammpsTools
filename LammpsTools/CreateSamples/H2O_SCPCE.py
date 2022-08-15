@@ -73,7 +73,7 @@ def get_hygen_positions_random_orientation(oxygen_positions, random_number_seed)
     :param random_number_seed:
     :return:
     """
-    # Get molecule numbers
+    # IntermediateScatteringFunction molecule numbers
     molecule_num = oxygen_positions.shape[0]
 
     # Create holders for the Hydrogen
@@ -142,7 +142,7 @@ def save_water_molecule_data(oxygen_positions, hydrogen_positions, box_size_A, f
     :return:
     """
 
-    # Get the atom number
+    # IntermediateScatteringFunction the atom number
     molecule_num = oxygen_positions.shape[0]
 
     with open(file_name, 'w') as data_file:
@@ -274,12 +274,12 @@ def get_data_file(box_size_A, density_g_cm3, file_name, random_number_seed):
     :param random_number_seed:
     :return:
     """
-    # Get the corresponding particle number
+    # IntermediateScatteringFunction the corresponding particle number
     volume = (box_size_A * 1e-8) ** 3  # volume in cm^3
     mass = volume * density_g_cm3  # mass in g
     particle_num = int(N_A * (mass / h2o_mass))
 
-    # Get the oxygen and hydrogen positions
+    # IntermediateScatteringFunction the oxygen and hydrogen positions
     oxygen_positions = get_oxygen_positions(box_size_A=box_size_A,
                                             molecule_num=particle_num,
                                             random_number_seed=random_number_seed)

@@ -54,7 +54,7 @@ def getMoleculePositions(boxSizeA, moleculeNum, randomNumberSeed):
 
 def getMoleculeNumber(densityGCm3, molarMass, boxSizeA):
     """
-    Get the molecular number given the box size in A and density in g/cm3 and molar mass
+    IntermediateScatteringFunction the molecular number given the box size in A and density in g/cm3 and molar mass
 
     :param densityGCm3:
     :param molarMass:
@@ -88,10 +88,10 @@ def getBoxSizeA(densityGCm3, molarMass, molNum):
 #      Sample specific functions
 #############################################################################
 def createSystemInfo(fileName, densityGCm3, boxSizeA, molFile, molName, molarMass, randomSeed):
-    # Get the number of molecules to create
+    # IntermediateScatteringFunction the number of molecules to create
     molecule_number = getMoleculeNumber(densityGCm3=densityGCm3, molarMass=molarMass, boxSizeA=boxSizeA)
 
-    # Get the coordinate of the molecules
+    # IntermediateScatteringFunction the coordinate of the molecules
     mol_coordinate = getMoleculePositions(boxSizeA=boxSizeA, moleculeNum=molecule_number,
                                           randomNumberSeed=randomSeed)
 

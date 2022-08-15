@@ -54,7 +54,7 @@ def getMoleculePositions(boxSizeA, moleculeNum, randomNumberSeed):
 
 def getMoleculeNumber(densityGCm3, molarMass, boxSizeA):
     """
-    Get the molecular number given the box size in A and density in g/cm3 and molar mass
+    IntermediateScatteringFunction the molecular number given the box size in A and density in g/cm3 and molar mass
 
     :param densityGCm3:
     :param molarMass:
@@ -88,10 +88,10 @@ def getBoxSizeA(densityGCm3, molarMass, molNum):
 #      Sample specific functions
 #############################################################################
 def createSystemInfo(fileName, densityGCm3, boxSizeA, molFile, molName, molarMass, randomSeed):
-    # Get the number of molecules to create
+    # IntermediateScatteringFunction the number of molecules to create
     molecule_number = getMoleculeNumber(densityGCm3=densityGCm3, molarMass=molarMass, boxSizeA=boxSizeA)
 
-    # Get the coordinate of the molecules
+    # IntermediateScatteringFunction the coordinate of the molecules
     mol_coordinate = getMoleculePositions(boxSizeA=boxSizeA, moleculeNum=molecule_number,
                                           randomNumberSeed=randomSeed)
 
@@ -205,9 +205,9 @@ def restartLammpsScriptNVT(fileName, temperature, getRDF=False, saveAtomPosition
         lammpsScript.write("group spce type  1  2 \n")
         lammpsScript.write("\n")
 
-        # Get the radial distribution function
+        # IntermediateScatteringFunction the radial distribution function
         if getRDF:
-            lammpsScript.write("#Get rdf\n")
+            lammpsScript.write("#IntermediateScatteringFunction rdf\n")
             lammpsScript.write("compute myRDF tip4p rdf 50 1 1 \n")
             lammpsScript.write("fix getRDF all ave/time 5 20 100 c_myRDF[*] file myRDF.* mode vector \n")
             lammpsScript.write("\n")
@@ -220,7 +220,7 @@ def restartLammpsScriptNVT(fileName, temperature, getRDF=False, saveAtomPosition
         lammpsScript.write("neigh_modify \n")
         lammpsScript.write("\n")
 
-        # Get the output data
+        # IntermediateScatteringFunction the output data
         if saveAtomPosition:
             lammpsScript.write("#Save atom positions\n")
             lammpsScript.write("compute myRDF tip4p rdf 50 1 1 \n")

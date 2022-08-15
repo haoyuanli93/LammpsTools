@@ -14,10 +14,10 @@ def get_thermo_info(log_file_name):
         # Load lines
         lines = log_file.readlines()
 
-        # Get line numbers
+        # IntermediateScatteringFunction line numbers
         line_nums = len(lines)
 
-        # Get a holder for the info to save
+        # IntermediateScatteringFunction a holder for the info to save
         thermo_info = []
 
         # Whether to save the thermo info the to list
@@ -25,7 +25,7 @@ def get_thermo_info(log_file_name):
 
         for line_idx in range(line_nums):
 
-            # Get a line
+            # IntermediateScatteringFunction a line
             line = lines[line_idx]
             words = line.split()
 
