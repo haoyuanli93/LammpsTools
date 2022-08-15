@@ -294,3 +294,6 @@ def get_data_file(box_size_A, density_g_cm3, file_name, random_number_seed):
 
     # Show some basic information
     print("Create an initialization file for {:.2e} molecules".format(particle_num))
+
+
+
