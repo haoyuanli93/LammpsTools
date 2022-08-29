@@ -1,0 +1,81 @@
+
+LiIon {
+
+  # AtomID  MolID  AtomType  charge   X       Y         Z
+  write("Data Atoms") {
+    $atom:Li $mol @atom:Li    1.0    0.00000  0.00000   0.000000
+  }
+
+  write_once("Data Masses") {
+    @atom:Li 6.94100
+  }
+
+  # The "In Settings" section stores force-field parameters for this molecule
+  write_once("In Settings") {
+    pair_coeff @atom:Li @atom:Li  0.00233 2.3118821735741806
+  }
+  # (explanation:  http://lammps.sandia.gov/doc/pair_charmm.html)
+
+}
+
+OHIon {
+
+  # AtomID MoleculeID AtomType Charge     X          Y      Z
+
+  write("Data Atoms") {
+    $atom:o1  $mol:oh  @atom:O1  -1.32   0.0000000   0.00000 0.000000
+    $atom:h3  $mol:oh  @atom:H3   0.32    0.9700      0.00000 0.000000
+  }
+
+  write_once("Data Masses") {
+    @atom:O1  15.9994
+    @atom:H3  1.008
+  }
+
+  write("Data Bonds") {
+    $bond:oh3 @bond:OH3 $atom:o1 $atom:h3
+  }
+
+  write_once("In Settings") {
+    bond_coeff   @bond:OH3         harmonic       450.0  0.9700
+
+    pair_coeff  @atom:O1  @atom:O1   lj/charmm/coul/long   0.120000   3.0290556416771532
+
+    #########################################################################
+    ####  There are three choices for for the O-H and H-H interactions
+    #########################################################################
+    #### 1) The original Jorgensen 1983 and 2004 Price & Brooks models have no
+    #     mixed OH or HH interactions. For this behavior, uncomment these lines:
+    #pair_coeff  @atom:H3  @atom:H3   lj/charmm/coul/long   0.00 0.4000
+    #pair_coeff  @atom:O1  @atom:H3   lj/charmm/coul/long   0.00 1.7753
+
+
+    #### 2) CHARMM uses an arithmetic mixing-rule for the O-H sigma parameter
+    pair_coeff @atom:H3  @atom:H3   lj/charmm/coul/long 0.0460 0.4000
+    #pair_coeff @atom:O1  @atom:H3   lj/charmm/coul/long 0.0836 1.7753 #arithmetic
+
+
+    #### 3) OPLS-AA uses geometric a mixing-fule for the O-H sigma parameter,
+    ####    If you want to use this, uncomment the following two lines:
+    #pair_coeff @atom:H3  @atom:H3  lj/charmm/coul/long 0.0460 0.4000
+    #pair_coeff @atom:O1  @atom:H1  lj/charmm/coul/long 0.0836 1.1226 #geometric
+    #########################################################################
+  }
+
+
+  write_once("In Constraints") {
+    group ohIon type  @atom:O1  @atom:H3
+    fix fRattleOH ohIon rattle 0.0001 10 100 b @bond:OH
+  }
+}
+
+
+# Note: Monovalent ion parameters for Ewald and SPC/E water are from
+#       Joung S, Cheatham TE, JPCB, 2008, 112(30):9020-41  (Table 5)
+#       https://doi.org/10.1021/jp8001614
+#       (The widths of the ions, expressed in terms of Rmin/2, are:
+#        1.212 and 2.711, for Na+ and Cl-, respectively)
+# Note: They use  U(r) =  ε*((σ/r)^12 - 2*(σ/r)^6)
+#            not  U(r) = 4ε*((σ/r)^12 - (σ/r)^6)
+#       ...but this should not effect the ε (epsilon) value.
+#       (LAMMPS uses later convention, in which case Rmin/2 = σ/2^(5/6))
