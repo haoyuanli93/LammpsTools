@@ -1,137 +1,139 @@
 import numpy as np
 
+NA = 6.0221408 * 0.1
 
-def get_thermo_info(log_file_name):
+
+def get_molecule_positions(box_size_A, molecule_num, random_number_seed):
     """
-    Extract the thermodynamics information
-    from the log file
+    Create a random array representing
+    the positions of water molecules in size a box
 
-    :param log_file_name:
+    :param box_size_A:
+    :param molecule_num:
+    :param random_number_seed: Force one to select a random number seed so that one won't forget
+                                to use a different seed for a different simulation
     :return:
     """
+    molecule_num = int(molecule_num)
+    box_size_A = float(box_size_A)
+    np.random.seed(random_number_seed)
 
-    with open(log_file_name, 'r') as log_file:
-        # Load lines
-        lines = log_file.readlines()
+    # First divides the whole space into several cubes according to the molecule number
+    axisPartNum = int(np.cbrt(float(molecule_num)) + 1)
 
-        # IntermediateScatteringFunction line numbers
-        line_nums = len(lines)
+    # Create a numpy array to represent this partition
+    gridCoordinate = np.zeros((axisPartNum, axisPartNum, axisPartNum, 3), dtype=np.float64)
+    gridCoordinate[:, :, :, 0] = np.arange(axisPartNum)[:, np.newaxis, np.newaxis]
+    gridCoordinate[:, :, :, 1] = np.arange(axisPartNum)[np.newaxis, :, np.newaxis]
+    gridCoordinate[:, :, :, 2] = np.arange(axisPartNum)[np.newaxis, np.newaxis, :]
 
-        # IntermediateScatteringFunction a holder for the info to save
-        thermo_info = []
+    # Convert the 3D coordinate to 1D to randomly choose from it
+    gridCoordinate = np.reshape(a=gridCoordinate, newshape=(axisPartNum ** 3, 3))
 
-        # Whether to save the thermo info the to list
-        flag = False
+    # Shuffle the array and choose from it
+    np.random.shuffle(gridCoordinate)
 
-        for line_idx in range(line_nums):
+    # Choose the first several samples as the initial position of the molecules
+    gridCoordinate = gridCoordinate[:molecule_num, :]
 
-            # IntermediateScatteringFunction a line
-            line = lines[line_idx]
-            words = line.split()
+    # Convert the grid coordinate to the molecule positions in A
+    gridCoordinate *= (box_size_A / float(axisPartNum))
 
-            # Check if this is an empty line
-            if not words:
-                continue
+    # Move the center to 0
+    gridCoordinate -= (box_size_A / 2.)
 
-            # Check if the start word is step
-            if words[0] == 'Step':
-                thermo_info_type = [str(word) for word in words]
-                flag = True
-                continue
+    # Purturb the water molecules
+    gridCoordinate += np.random.rand(molecule_num, 3) * 0.2
 
-            if words[0] == 'Loop':
-                flag = False
-                continue
-
-            if flag:
-                thermo_info.append([float(word) for word in words])
-
-    # Convert the list to numpy array
-    thermo_info = np.array(thermo_info)
-
-    # Convert the numpy array to dictionary
-    thermo_info_dict = {}
-
-    # Add entry to the dictionary
-    entry_num = len(thermo_info_type)
-    for entry_idx in range(entry_num):
-        thermo_info_dict.update({thermo_info_type[entry_idx]: np.copy(thermo_info[:, entry_idx])})
-
-    return thermo_info_dict
+    return gridCoordinate
 
 
-def get_thermo_info_log_list(log_file_name_list):
+def get_molecule_number(density_g_cm3, molar_mass, box_size_A):
     """
-    When we restart a simulation several times,
-    we can save the thermo info to the same dictionary
-    with the common entry.
+    Get the molecular number given the box size in A and density in g/cm3 and molar mass
 
-    :param log_file_name_list:
+    :param density_g_cm3:
+    :param molar_mass:
+    :param box_size_A:
     :return:
     """
-    thermo_info_dict_list = []
-    entry_lists = []
-    log_num = len(log_file_name_list)
+    # molar num
+    NA = 6.0221408 * 0.1
+    molecule_number = int((box_size_A ** 3) * density_g_cm3 / molar_mass * NA)
 
-    for log_idx in range(log_num):
-        thermo_info_dict_list.append(get_thermo_info(log_file_name=log_file_name_list[log_idx]))
-        entry_lists.append(list(thermo_info_dict_list[-1].keys()))
-
-    # Total thermo info
-    thermo_info_dict_tot = {}
-
-    entry_list = set(entry_lists[0])
-    entry_list = entry_list.intersection(*entry_lists)
-
-    entry_list = list(entry_list)
-
-    for entry_idx in range(len(entry_list)):
-        entry_name = entry_list[entry_idx]
-        content = np.concatenate([thermo_info_dict_list[idx][entry_name] for idx in range(log_num)])
-        thermo_info_dict_tot.update({entry_name: content})
-
-    return thermo_info_dict_tot
+    return molecule_number
 
 
-def get_rdf_info(rdf_file):
+def get_box_size_A(density_g_cm3, molar_mass, mol_num):
     """
-
-    :param rdf_file:
+    Derive a box size that is close to the molar mass and density in g/cm3
+    for a give molecule number
+    :param density_g_cm3:
+    :param molar_mass:
+    :param mol_num:
     :return:
     """
-    with open(rdf_file, 'r') as rdf_file:
+    volume = mol_num / (density_g_cm3 / molar_mass * NA)
 
-        # Create a holder to load the file
-        rdf_holder = []
-        step_holder = []
+    return np.cbrt(volume)
 
-        # Skip the header
-        for x in range(3):
-            _ = rdf_file.readline()
 
-        # Load a new line
-        line = rdf_file.readline()
-        while line:
+def create_system_info(file_name, density_g_cm3, box_size_A, molecule_file, molecule_name, molar_mass, random_seed):
+    # Get the number of molecules to create
+    molecule_number = get_molecule_number(density_g_cm3=density_g_cm3,
+                                          molar_mass=molar_mass,
+                                          box_size_A=box_size_A)
 
-            # Parse the new line
-            words = line.split()
+    # Get the coordinate of the molecules
+    mol_coordinate = get_molecule_positions(box_size_A=box_size_A,
+                                            molecule_num=molecule_number,
+                                            random_number_seed=random_seed)
 
-            # If there are only two words, then this is a description line
-            if len(words) == 2:
+    with open(file_name, 'w') as data_file:
+        data_file.write("write_once(\"Data Boundary\") { \n")
+        data_file.write("{} {} xlo xhi \n".format(-box_size_A / 2., box_size_A / 2.))
+        data_file.write("{} {} ylo yhi \n".format(-box_size_A / 2., box_size_A / 2.))
+        data_file.write("{} {} zlo zhi \n".format(-box_size_A / 2., box_size_A / 2.))
+        data_file.write("} \n")
+        data_file.write("\n")
 
-                # Save the step number
-                step_holder.append(int(words[0]))
+        data_file.write("write_once(\"In Init\") {\n")
+        data_file.write("\n")
+        data_file.write("units           real \n")
+        data_file.write("boundary p p p\n")
+        data_file.write("atom_style      full \n")
+        data_file.write("}\n")
+        data_file.write("\n")
 
-                # Create a new entry in the rdf holder
-                # Because a new description line
-                # means the following data are from a new MD snapshot
-                rdf_holder.append([])
+        # data_file.write("# import the forcefield file\n")
+        data_file.write("# import molecule building block file\n")
+        data_file.write("import \"{}\" \n".format(molecule_file))
+        data_file.write("\n")
+        data_file.write("# create a single copy of this molecule at position 0,0,0\n")
 
-            # otherwise, this is a data line
-            else:
-                rdf_holder[-1].append([float(words[y]) for y in range(1, 4)])
+        for mol_idx in range(molecule_number):
+            data_file.write("mol{} = new {}.move({}, {}, {})\n".format(mol_idx,
+                                                                       molecule_name,
+                                                                       mol_coordinate[mol_idx, 0],
+                                                                       mol_coordinate[mol_idx, 1],
+                                                                       mol_coordinate[mol_idx, 2],
+                                                                       ))
 
-            # Load a new line
-            line = rdf_file.readline()
 
-    return np.array(step_holder, dtype=np.int64), np.array(rdf_holder, dtype=np.float64)
+def get_sbatch_file_cori(file_name, calculation_hour, account_name):
+    with open(file_name, 'w') as data_file:
+        data_file.write("#!/bin/bash \n")
+        data_file.write("#SBATCH --qos=regular \n")
+        data_file.write("#SBATCH --time={}:00:00 \n".format(int(calculation_hour)))
+        data_file.write("#SBATCH --nodes=2 \n")
+        data_file.write("#SBATCH --constraint=knl \n")
+        data_file.write("#SBATCH --job-name=md # Job name for allocation \n")
+        data_file.write("#SBATCH --output=logFiles/%j.log # File to which STDOUT will be written, %j inserts jobid \n")
+        data_file.write("#SBATCH --error=logFiles/%j.error # File to which STDERR will be written, %j inserts jobid \n")
+
+        if not (account_name is None):
+            data_file.write("#SBATCH --account={} \n".format(account_name))
+
+        data_file.write("module load lammps \n")
+        data_file.write(
+            "srun -n 136 -c 2 --cpu-bind=cores lmp_cori -in miniRun.lmp -log logFiles/mylog_$SLURM_JOB_ID.lammps \n")
