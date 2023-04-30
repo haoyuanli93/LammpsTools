@@ -3,9 +3,9 @@ import os
 import shutil
 import sys
 
-sys.path.append(r"/mnt/c/Users/haoyuan/Documents/GitHub/LammpsTools")
+import LammpsTools.util
 
-from LammpsTools import util
+sys.path.append(r"/mnt/c/Users/haoyuan/Documents/GitHub/LammpsTools")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("temperature", help="temperature in K", type=float)
@@ -87,9 +87,9 @@ def createNewProj(proj_ID, temperature=293.15, density_g_cm3=1.0, molecule_num=1
     # Create the system.lt file in the new project file
     util.create_system_info(file_name="./proj{}/system.lt".format(proj_ID),
                             density_g_cm3=density_g_cm3,
-                            box_size_A=util.get_box_size_A(density_g_cm3=density_g_cm3,
-                                                           molar_mass=molar_mass,
-                                                           mol_num=int(molecule_num)),
+                            box_size_A=LammpsTools.util.get_box_size_A(density_gcm3=density_g_cm3,
+                                                                       molar_mass_gmol=molar_mass,
+                                                                       mol_num=int(molecule_num)),
                             molecule_file=r"/mnt/c/Users/haoyuan/Documents/GitHub/LammpsTools/moleculeZoo/tip4p2005.lt",
                             molecule_name="TIP4P2005",
                             molar_mass=molar_mass,
